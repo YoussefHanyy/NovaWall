@@ -1,0 +1,31 @@
+{
+  "name": "novawall",
+  "version": "1.0.0",
+  "description": "NovaWall — Modern Desktop Live Wallpaper Manager",
+  "main": "src/main/index.js",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "NovaWall",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.novawall.app",
+    "productName": "NovaWall",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/icon.ico"
+    }
+  }
+}

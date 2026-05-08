@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100vw; height: 100vh; overflow: hidden; background: #000; }
+    #wallpaper-container {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #000;
+    }
+    video, img {
+      position: absolute;
+      transition: opacity 0.8s ease;
+    }
+    .fit-fill { width: 100%; height: 100%; object-fit: cover; }
+    .fit-stretch { width: 100%; height: 100%; object-fit: fill; }
+    .fit-center { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .fade-in { opacity: 1; }
+    .fade-out { opacity: 0; }
+  </style>
+</head>
+<body>
+  <div id="wallpaper-container"></div>
+  <script>
+    const container = document.getElementById('wallpaper-container');
+    let currentElement = null;
+    let fpsLimit = 30;
+    let fpsInterval = null;
+
+    function getFitClass(mode) {
+      const map = { fill: 'fit-fill', stretch: 'fit-stretch', center: 'fit-center' };
+      return map[mode] || 'fit-fill';
+    }
+
+    function loadWallpaper(data) {
+      const { path: wpPath, type, fitMode, volume } = data;
+      console.log('Loading wallpaper:', wpPath, type);
+
+      // Fade out current
+      if (currentElement) {
+        currentElement.classList.add('fade-out');
+        const old = currentElement;
+        setTimeout(() => old.remove(), 800);
+      }
+
+      let el;
+      if (type === 'gif' || type === 'image') {
+        el = document.createElement('img');
+        el.src = wpPath;
+        el.onerror = () => console.error('Failed to load image:', wpPath);
+      } else {
+        // mp4, webm
+        el = document.createElement('video');
+        el.src = wpPath;
+        el.loop = true;
+        el.muted = true; // Start muted to allow autoplay
+        el.volume = volume || 0;
+        el.autoplay = true;
+        el.playsInline = true;
+        el.disablePictureInPicture = true;
+        el.style.willChange = 'transform';
+        el.style.transform = 'translateZ(0)';
+        el.onerror = (e) => console.error('Failed to load video:', wpPath, e);
+        el.onloadeddata = () => {
+          console.log('Video loaded successfully');
+          if (volume > 0) { el.muted = false; el.volume = volume; }
+        };
+      }
+
+      el.className = `${getFitClass(fitMode)} fade-out`;
+      container.appendChild(el);
+
+      // Trigger fade in
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.classList.remove('fade-out');
+          el.classList.add('fade-in');
+        });
+      });
+
+      currentElement = el;
+    }
+
+    // ─── IPC Listeners ───
+    if (window.wpControl) {
+      window.wpControl.onLoadWallpaper(loadWallpaper);
+
+      window.wpControl.onPause(() => {
+        if (currentElement && currentElement.tagName === 'VIDEO') currentElement.pause();
+      });
+
+      window.wpControl.onResume(() => {
+        if (currentElement && currentElement.tagName === 'VIDEO') currentElement.play();
+      });
+
+      window.wpControl.onSetVolume((vol) => {
+        if (currentElement && currentElement.tagName === 'VIDEO') {
+          currentElement.volume = vol;
+          currentElement.muted = vol === 0;
+        }
+      });
+
+      window.wpControl.onSetFitMode((mode) => {
+        if (currentElement) {
+          currentElement.className = currentElement.className.replace(/fit-\w+/, getFitClass(mode));
+        }
+      });
+
+      window.wpControl.onSetFps((fps) => {
+        fpsLimit = fps;
+        // For videos, we can't directly limit FPS, but we can throttle rendering
+      });
+
+      window.wpControl.onConfig((config) => {
+        fpsLimit = config.fpsLimit || 30;
+      });
+    }
+  </script>
+</body>
+</html>
