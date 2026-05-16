@@ -327,16 +327,67 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .modal-close:hover { background:var(--danger); color:white; }
 
+/* ─── Dropdown Menu ─── */
+.dropdown-menu {
+  position: fixed;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 9999;
+  min-width: 200px;
+  max-width: 300px;
+  overflow: hidden;
+}
+.dropdown-menu.hidden { display: none; }
+.dropdown-header {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+.dropdown-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.dropdown-list button {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.dropdown-list button:hover {
+  background: var(--bg-card-hover);
+}
+
 /* ─── Drop Zone ─── */
 .drop-zone {
-  border:2px dashed var(--border); border-radius:var(--radius);
-  padding:48px 24px; text-align:center; transition:var(--transition);
-  display:flex; flex-direction:column; align-items:center; gap:12px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  transition: var(--transition);
+  color: var(--text-muted);
 }
-.drop-zone.drag-over { border-color:var(--accent); background:var(--accent-glow); }
-.drop-zone p { font-weight:600; }
-.drop-zone span { color:var(--text-muted); font-size:12px; }
-.drop-zone small { color:var(--text-muted); font-size:11px; margin-top:8px; }
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--text-primary);
+}
+.drop-zone p { font-size: 14px; margin: 0; }
+.drop-zone span { font-size: 12px; color: var(--text-muted); }
+.drop-zone small { font-size: 11px; color: var(--text-muted); }
 
 /* ─── Import tabs ─── */
 .import-tabs { display:flex; gap:4px; margin:16px 0; background:var(--bg-tertiary); border-radius:var(--radius-sm); padding:3px; }
@@ -376,6 +427,7 @@ input[type="range"]::-webkit-slider-thumb {
   border:1px solid var(--border); color:var(--text-primary);
   font-size:13px; display:flex; align-items:center; gap:10px;
   animation:toastIn 0.3s ease; box-shadow:var(--shadow);
+  transition: opacity 0.3s ease;
 }
 @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .toast.toast-success .toast-dot { background:var(--success); }

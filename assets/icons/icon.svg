@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#1a1030"/>
+    </linearGradient>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="256" height="256" rx="52" fill="url(#bg)"/>
+
+  <!-- Monitor body -->
+  <rect x="36" y="58" width="184" height="120" rx="14" fill="none" stroke="url(#grad1)" stroke-width="6"/>
+
+  <!-- Monitor screen fill (dark) -->
+  <rect x="50" y="72" width="156" height="92" rx="6" fill="#0d0d1f"/>
+
+  <!-- Nova star burst inside screen -->
+  <!-- Outer glow ring -->
+  <circle cx="128" cy="118" r="28" fill="none" stroke="url(#grad2)" stroke-width="1.5" opacity="0.35" filter="url(#softglow)"/>
+  <circle cx="128" cy="118" r="20" fill="none" stroke="url(#grad1)" stroke-width="1" opacity="0.5"/>
+
+  <!-- Star rays (8-pointed) -->
+  <g transform="translate(128,118)" fill="url(#grad1)" filter="url(#glow)">
+    <!-- Main 4 spikes -->
+    <polygon points="0,-22 2.2,-2.2 0,2 -2.2,-2.2" opacity="0.95"/>
+    <polygon points="0,22 2.2,2.2 0,-2 -2.2,2.2" opacity="0.95"/>
+    <polygon points="-22,0 -2.2,2.2 2,-0 -2.2,-2.2" opacity="0.95"/>
+    <polygon points="22,0 2.2,2.2 -2,0 2.2,-2.2" opacity="0.95"/>
+    <!-- Diagonal 4 spikes (shorter) -->
+    <polygon points="-14,-14 -1.5,-1.5 0,1.5 1.5,-1.5" opacity="0.65" transform="rotate(45)"/>
+    <polygon points="-14,-14 -1.5,-1.5 0,1.5 1.5,-1.5" opacity="0.65" transform="rotate(135)"/>
+    <polygon points="-14,-14 -1.5,-1.5 0,1.5 1.5,-1.5" opacity="0.65" transform="rotate(225)"/>
+    <polygon points="-14,-14 -1.5,-1.5 0,1.5 1.5,-1.5" opacity="0.65" transform="rotate(315)"/>
+    <!-- Core -->
+    <circle r="5" fill="url(#grad1)" opacity="1"/>
+    <circle r="2.5" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- Small decorative dots on screen (stars) -->
+  <circle cx="68" cy="82" r="1.5" fill="#818cf8" opacity="0.6"/>
+  <circle cx="76" cy="90" r="1" fill="#c084fc" opacity="0.4"/>
+  <circle cx="182" cy="86" r="1.5" fill="#818cf8" opacity="0.5"/>
+  <circle cx="172" cy="76" r="1" fill="#c084fc" opacity="0.3"/>
+  <circle cx="60" cy="148" r="1" fill="#818cf8" opacity="0.4"/>
+  <circle cx="196" cy="150" r="1.5" fill="#c084fc" opacity="0.5"/>
+
+  <!-- Monitor stand neck -->
+  <rect x="114" y="178" width="28" height="14" rx="4" fill="url(#grad2)" opacity="0.7"/>
+
+  <!-- Monitor stand base -->
+  <rect x="88" y="192" width="80" height="10" rx="5" fill="url(#grad1)" opacity="0.6"/>
+
+  <!-- Subtle accent line at top of monitor -->
+  <rect x="50" y="72" width="156" height="3" rx="1.5" fill="url(#grad1)" opacity="0.4"/>
+</svg>

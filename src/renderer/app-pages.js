@@ -4,11 +4,15 @@
 
 // ─── Playlists Page ───
 function renderPlaylists() {
+  console.log('Rendering playlists page, state.playlists:', state.playlists);
   const pls = state.playlists;
   return `
     <div class="page-header">
       <div><h1 class="page-title">Playlists</h1><p class="page-subtitle">Auto-rotate your wallpapers</p></div>
-      <button class="btn btn-primary" onclick="createNewPlaylist()">+ New Playlist</button>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <input id="new-playlist-name" class="input" type="text" placeholder="New playlist name" value="${state.newPlaylistName || ''}" oninput="state.newPlaylistName=this.value" style="min-width:220px;" />
+        <button class="btn btn-primary" onclick="createPlaylistInline()">Create</button>
+      </div>
     </div>
     <div class="playlist-list">
       ${pls.length ? pls.map(p => {
@@ -36,7 +40,7 @@ function renderPlaylists() {
             ${p.is_active
               ? `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();deactivatePlaylist('${p.id}')">⏸ Stop</button>`
               : `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();activatePlaylist('${p.id}')">▶ Play</button>`}
-            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();selectPlaylist('${p.id}')">View</button>
+            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openEditPlaylistModal('${p.id}')">View</button>
             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deletePlaylist('${p.id}')">✕</button>
           </div>
         </div>`;
@@ -62,8 +66,20 @@ function renderPlaylistDetails() {
   return `
     <div class="playlist-details">
       <div class="page-header" style="margin-top:24px;">
-        <div><h1 class="page-title">${playlist.name}</h1><p class="page-subtitle">${items.length} wallpaper${items.length !== 1 ? 's' : ''} in this playlist</p></div>
-        <button class="btn btn-secondary" onclick="closePlaylistDetails()">Close</button>
+        <div style="width:100%; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px;">
+            <h1 class="page-title" style="margin-bottom:6px;">${playlist.name}</h1>
+            <p class="page-subtitle" style="margin:0;">${items.length} wallpaper${items.length !== 1 ? 's' : ''} in this playlist</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button class="btn btn-secondary" onclick="closePlaylistDetails()">Close</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input id="rename-playlist-name" class="input" type="text" value="${state.playlistRenameTargetId===playlist.id ? state.playlistRenameDraft : playlist.name}" placeholder="Rename playlist" style="flex:1; min-width:220px; padding:10px 14px;" oninput="state.playlistRenameDraft=this.value" />
+        <button class="btn btn-primary" onclick="confirmEditPlaylistInline('${playlist.id}')">Save</button>
+        <button class="btn btn-secondary" onclick="cancelPlaylistRename()">Cancel</button>
       </div>
       <div class="playlist-detail-card">
         <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap;">
@@ -100,7 +116,7 @@ function renderSettings() {
   return `
     <div class="page-header"><div><h1 class="page-title">Settings</h1></div></div>
     <div class="settings-section">
-      <div class="settings-section-title">⚡ Performance</div>
+      <div class="settings-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Performance</div>
       <div class="slider-row"><div class="toggle-label">FPS Limit<small>Lower saves resources</small></div>
         <div class="slider-control"><input type="range" min="10" max="60" step="5" value="${s.fps_limit||30}" onchange="updateSetting('fps_limit',this.value);this.nextElementSibling.textContent=this.value+'fps'"><span class="slider-value">${s.fps_limit||30}fps</span></div></div>
       <div class="toggle-row"><div class="toggle-label">Pause during fullscreen<small>Saves resources while gaming</small></div>
@@ -109,14 +125,14 @@ function renderSettings() {
         <div class="toggle ${s.gpu_acceleration!=='false'?'active':''}" onclick="toggleSetting(this,'gpu_acceleration')"></div></div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">🔋 Battery</div>
+      <div class="settings-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg> Battery</div>
       <div class="toggle-row"><div class="toggle-label">Battery Saver<small>Reduce FPS on battery</small></div>
         <div class="toggle ${s.battery_saver!=='false'?'active':''}" onclick="toggleSetting(this,'battery_saver')"></div></div>
       <div class="slider-row"><div class="toggle-label">Battery Threshold</div>
         <div class="slider-control"><input type="range" min="10" max="80" step="5" value="${s.battery_threshold||30}" onchange="updateSetting('battery_threshold',this.value);this.nextElementSibling.textContent=this.value+'%'"><span class="slider-value">${s.battery_threshold||30}%</span></div></div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">🖥️ Display</div>
+      <div class="settings-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Display</div>
       <div class="toggle-row"><div class="toggle-label">Default Fit Mode</div>
         <select class="input" style="width:120px" onchange="updateSetting('default_fit_mode',this.value)">
           <option value="fill" ${s.default_fit_mode==='fill'?'selected':''}>Fill</option>
@@ -124,12 +140,12 @@ function renderSettings() {
           <option value="center" ${s.default_fit_mode==='center'?'selected':''}>Center</option></select></div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">🚀 General</div>
+      <div class="settings-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> General</div>
       <div class="toggle-row"><div class="toggle-label">Start with Windows</div>
         <div class="toggle ${s.start_with_windows==='true'?'active':''}" onclick="toggleSetting(this,'start_with_windows')"></div></div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">📦 Data</div>
+      <div class="settings-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg> Data</div>
       <div class="flex-gap-8"><button class="btn btn-secondary" onclick="importCollection()">Import Collection</button></div>
     </div>`;
 }
@@ -172,11 +188,111 @@ function previewWallpaper(e, id) {
 }
 function closePreview() { document.getElementById('preview-modal').classList.add('hidden'); document.getElementById('preview-player').innerHTML = ''; }
 
-async function createNewPlaylist() {
-  const name = window.novawall ? await window.novawall.showPrompt('Playlist name:') : prompt('Playlist name:');
-  if (!name) return;
-  if (window.novawall) { const pl = await window.novawall.createPlaylist({ name }); state.playlists.unshift(pl); showToast('Playlist created!'); renderPage(); }
+function createNewPlaylist() {
+  openCreatePlaylistModal();
 }
+
+function openCreatePlaylistModal() {
+  console.log('Opening create playlist modal');
+  const modal = document.getElementById('create-playlist-modal');
+  const input = document.getElementById('create-playlist-name');
+  console.log('Modal element:', modal, 'Input element:', input);
+  if (!modal || !input) {
+    console.error('Modal or input elements not found!');
+    return;
+  }
+  input.value = '';
+  modal.classList.remove('hidden');
+  console.log('Modal should now be visible');
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeCreatePlaylistModal() {
+  const modal = document.getElementById('create-playlist-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function confirmCreatePlaylist() {
+  const input = document.getElementById('create-playlist-name');
+  if (!input) {
+    console.error('Create playlist input not found');
+    return;
+  }
+  const name = input.value.trim();
+  if (!name) {
+    showToast('Playlist name is required', 'error');
+    return;
+  }
+  try {
+    if (!window.novawall) {
+      console.error('window.novawall not available');
+      showToast('Error: Backend not available', 'error');
+      return;
+    }
+    const pl = await window.novawall.createPlaylist({ name });
+    state.playlists.unshift(pl);
+    showToast('Playlist created!');
+    closeCreatePlaylistModal();
+    renderPage();
+  } catch (e) {
+    console.error('Create playlist error:', e);
+    showToast('Failed to create playlist: ' + e.message, 'error');
+  }
+}
+
+function openEditPlaylistModal(playlistId) {
+  const modal = document.getElementById('edit-playlist-modal');
+  const input = document.getElementById('edit-playlist-name');
+  if (!modal || !input) return;
+  const playlist = state.playlists.find(p => p.id === playlistId);
+  if (!playlist) return;
+  playlistEditTargetId = playlistId;
+  input.value = playlist.name;
+  modal.classList.remove('hidden');
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeEditPlaylistModal() {
+  const modal = document.getElementById('edit-playlist-modal');
+  if (modal) modal.classList.add('hidden');
+  playlistEditTargetId = null;
+}
+
+async function confirmEditPlaylist() {
+  const input = document.getElementById('edit-playlist-name');
+  if (!input) {
+    console.error('Edit playlist input not found');
+    return;
+  }
+  const name = input.value.trim();
+  if (!name) {
+    showToast('Playlist name is required', 'error');
+    return;
+  }
+  if (!playlistEditTargetId) {
+    console.error('No playlist target ID');
+    showToast('Error: No playlist selected', 'error');
+    return;
+  }
+  try {
+    if (!window.novawall) {
+      console.error('window.novawall not available');
+      showToast('Error: Backend not available', 'error');
+      return;
+    }
+    const updated = await window.novawall.updatePlaylist(playlistEditTargetId, { name });
+    const idx = state.playlists.findIndex(p => p.id === playlistEditTargetId);
+    if (idx >= 0) state.playlists[idx] = updated;
+    if (state.selectedPlaylistId === playlistEditTargetId) state.selectedPlaylistId = playlistEditTargetId;
+    showToast('Playlist renamed!');
+    closeEditPlaylistModal();
+    renderPage();
+  } catch (e) {
+    console.error('Edit playlist error:', e);
+    showToast('Failed to rename playlist: ' + e.message, 'error');
+  }
+}
+
 async function activatePlaylist(id) { if (window.novawall) await window.novawall.activatePlaylist(id); state.playlists.forEach(p => p.is_active = p.id === id ? 1 : 0); showToast('Playlist activated!'); renderPage(); }
 async function deactivatePlaylist(id) { if (window.novawall) await window.novawall.deactivatePlaylist(id); state.playlists.forEach(p => { if (p.id === id) p.is_active = 0; }); renderPage(); }
 async function deletePlaylist(id) { 
@@ -233,19 +349,75 @@ async function movePlaylistItem(pid, wid, direction) {
   renderPage();
 }
 
-async function addToPlaylist(e, wid) {
-  if (e) e.stopPropagation();
-  const activePl = state.playlists.find(p => p.is_active) || state.playlists[0];
-  if (!activePl) {
+let pendingWallpaperIdForPlaylist = null;
+let playlistEditTargetId = null;
+
+function addToPlaylist(e, wid) {
+  e.stopPropagation();
+  if (!state.playlists || state.playlists.length === 0) {
     showToast('Create a playlist first!', 'error');
     return;
   }
-  if (window.novawall) {
-    const updated = await window.novawall.addToPlaylist(activePl.id, wid);
-    const idx = state.playlists.findIndex(p => p.id === activePl.id);
-    if (idx >= 0) state.playlists[idx] = updated;
-    showToast(`Added to ${activePl.name}`);
+  pendingWallpaperIdForPlaylist = wid;
+  const button = e.target.closest('button') || e.target;
+  openPlaylistSelectDropdown(button);
+}
+
+function openPlaylistSelectDropdown(button) {
+  const dropdown = document.getElementById('playlist-select-dropdown');
+  if (!dropdown) return;
+  const list = document.getElementById('playlist-select-list');
+  list.innerHTML = state.playlists.map(p => 
+    `<button type="button" onclick="event.stopPropagation(); confirmAddToPlaylist('${p.id}')">
+      <span style="font-size: 14px;">${p.is_active ? '▶' : '🎵'}</span>
+      ${p.name}
+    </button>`
+  ).join('');
+
+  dropdown.classList.remove('hidden');
+
+  const rect = button.getBoundingClientRect();
+  const dropdownWidth = 260;
+  const dropdownHeight = Math.min(240, state.playlists.length * 48 + 48);
+  let left = rect.left;
+  let top = rect.bottom + 6;
+
+  if (left + dropdownWidth > window.innerWidth - 12) {
+    left = window.innerWidth - dropdownWidth - 12;
   }
+  if (top + dropdownHeight > window.innerHeight - 12) {
+    top = rect.top - dropdownHeight - 6;
+  }
+
+  dropdown.style.width = dropdownWidth + 'px';
+  dropdown.style.left = `${Math.max(left, 12)}px`;
+  dropdown.style.top = `${Math.max(top, 12)}px`;
+
+  const closeHandler = (e) => {
+    if (!dropdown.contains(e.target)) {
+      closePlaylistSelectDropdown();
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener('click', closeHandler);
+  }, 0);
+}
+
+function closePlaylistSelectDropdown() {
+  const dropdown = document.getElementById('playlist-select-dropdown');
+  if (dropdown) dropdown.classList.add('hidden');
+  pendingWallpaperIdForPlaylist = null;
+}
+
+async function confirmAddToPlaylist(pid) {
+  if (!window.novawall || !pendingWallpaperIdForPlaylist) return;
+  const pl = state.playlists.find(p => p.id === pid);
+  const updated = await window.novawall.addToPlaylist(pid, pendingWallpaperIdForPlaylist);
+  const idx = state.playlists.findIndex(p => p.id === pid);
+  if (idx >= 0) state.playlists[idx] = updated;
+  showToast(`Added to ${pl ? pl.name : 'playlist'}`);
+  closePlaylistSelectDropdown();
 }
 async function importCollection() { if (window.novawall) { await window.novawall.importCollection(); await loadData(); showToast('Imported!'); renderPage(); } }
 function updateSetting(key, val) { if (window.novawall) window.novawall.setSetting(key, String(val)); state.settings[key] = String(val); }
@@ -285,6 +457,49 @@ async function confirmImport() {
   showToast(`${state.importPendingFiles.length} wallpaper(s) imported!`); closeImportModal(); renderPage();
 }
 function attachPageListeners() {}
+
+// ─── Inline Playlist Helpers ───
+async function createPlaylistInline() {
+  const input = document.getElementById('new-playlist-name');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { showToast('Enter a playlist name', 'error'); return; }
+  if (!window.novawall) { showToast('Backend not available', 'error'); return; }
+  try {
+    const pl = await window.novawall.createPlaylist({ name });
+    state.playlists.unshift(pl);
+    state.newPlaylistName = '';
+    showToast('Playlist created!');
+    renderPage();
+  } catch (e) {
+    showToast('Failed to create playlist: ' + e.message, 'error');
+  }
+}
+
+async function confirmEditPlaylistInline(playlistId) {
+  const input = document.getElementById('rename-playlist-name');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { showToast('Playlist name is required', 'error'); return; }
+  if (!window.novawall) { showToast('Backend not available', 'error'); return; }
+  try {
+    const updated = await window.novawall.updatePlaylist(playlistId, { name });
+    const idx = state.playlists.findIndex(p => p.id === playlistId);
+    if (idx >= 0) state.playlists[idx] = updated;
+    state.playlistRenameDraft = '';
+    state.playlistRenameTargetId = null;
+    showToast('Playlist renamed!');
+    renderPage();
+  } catch (e) {
+    showToast('Failed to rename playlist: ' + e.message, 'error');
+  }
+}
+
+function cancelPlaylistRename() {
+  state.playlistRenameDraft = '';
+  state.playlistRenameTargetId = null;
+  renderPage();
+}
 
 // ─── Drop Zone & Init ───
 document.addEventListener('DOMContentLoaded', () => {
