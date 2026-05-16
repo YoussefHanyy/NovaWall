@@ -9,9 +9,9 @@ function renderPlaylists() {
   return `
     <div class="page-header">
       <div><h1 class="page-title">Playlists</h1><p class="page-subtitle">Auto-rotate your wallpapers</p></div>
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <input id="new-playlist-name" class="input" type="text" placeholder="New playlist name" value="${state.newPlaylistName || ''}" oninput="state.newPlaylistName=this.value" style="min-width:220px;" />
-        <button class="btn btn-primary" onclick="createPlaylistInline()">Create</button>
+      <div class="playlist-create-row">
+        <input id="new-playlist-name" class="input" type="text" placeholder="New playlist name" value="${state.newPlaylistName || ''}" oninput="state.newPlaylistName=this.value" />
+        <button class="btn btn-primary" onclick="createPlaylistInline()">+ Create</button>
       </div>
     </div>
     <div class="playlist-list">
