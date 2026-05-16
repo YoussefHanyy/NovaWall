@@ -8,6 +8,7 @@ const { StartupManager } = require('./startup');
  * Setup all IPC handlers between main and renderer processes.
  */
 function setupIpcHandlers({ mainWindow, wallpaperWindow, db, playlistEngine, perfMonitor, trayManager, dataDir, wallpaperDir, thumbDir }) {
+  console.log('Initializing IPC handlers in main process');
   const startup = new StartupManager();
 
   // ─── Window Controls ───

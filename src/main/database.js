@@ -14,8 +14,20 @@ class DatabaseManager {
 
   initialize() {
     if (fs.existsSync(this.dbPath)) {
-      try { this.data = JSON.parse(fs.readFileSync(this.dbPath, 'utf-8')); }
-      catch { this.data = null; }
+      try { 
+        this.data = JSON.parse(fs.readFileSync(this.dbPath, 'utf-8')); 
+      } catch (e) {
+        console.error('Failed to parse db:', e);
+        if (fs.existsSync(this.dbPath + '.tmp')) {
+          try { this.data = JSON.parse(fs.readFileSync(this.dbPath + '.tmp', 'utf-8')); }
+          catch (e2) { this.data = null; }
+        } else {
+          this.data = null;
+        }
+        if (!this.data) {
+          try { fs.renameSync(this.dbPath, this.dbPath + '.corrupted.' + Date.now()); } catch(e3) {}
+        }
+      }
     }
     if (!this.data) {
       this.data = { wallpapers: [], playlists: [], playlist_items: [], schedules: [], settings: {}, categories: [] };
@@ -25,7 +37,13 @@ class DatabaseManager {
   }
 
   _save() {
-    try { fs.writeFileSync(this.dbPath, JSON.stringify(this.data, null, 2), 'utf-8'); } catch (e) { console.error('DB save error:', e); }
+    try { 
+      const tempPath = this.dbPath + '.tmp';
+      fs.writeFileSync(tempPath, JSON.stringify(this.data, null, 2), 'utf-8');
+      fs.renameSync(tempPath, this.dbPath);
+    } catch (e) { 
+      console.error('DB save error:', e); 
+    }
   }
 
   _seedDefaults() {
@@ -47,6 +65,19 @@ class DatabaseManager {
       { id: 'uncategorized', name: 'Uncategorized', color: '#6366f1' },
     ];
     cats.forEach(c => { if (!this.data.categories.find(x => x.id === c.id)) this.data.categories.push(c); });
+    
+    // Add a default playlist if none exist
+    if (this.data.playlists.length === 0) {
+      this.data.playlists.push({
+        id: 'default',
+        name: 'My Playlist',
+        interval_ms: 3600000, // 1 hour
+        shuffle: 0,
+        is_active: 0,
+        created_at: new Date().toISOString(),
+        items: []
+      });
+    }
   }
 
   // ─── Wallpapers ───

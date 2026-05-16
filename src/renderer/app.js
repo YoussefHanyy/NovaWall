@@ -12,6 +12,9 @@ const state = {
   searchQuery: '',
   activeFilter: 'all',
   selectedPlaylistId: null,
+  newPlaylistName: '',
+  playlistRenameDraft: '',
+  playlistRenameTargetId: null,
   importPendingFiles: [],
 };
 
@@ -109,7 +112,7 @@ function wallpaperCard(wp) {
       <span class="card-badge">${wp.type.toUpperCase()}</span>
       <div class="card-actions">
         <button onclick="toggleFav(event, '${wp.id}')" title="Favorite" class="${wp.is_favorite ? 'favorited' : ''}">♥</button>
-        <button onclick="addToPlaylist(event, '${wp.id}')" title="Add to active playlist">➕</button>
+        <button onclick="addToPlaylist(event, '${wp.id}')" title="Add to playlist">➕</button>
         <button onclick="previewWallpaper(event, '${wp.id}')" title="Preview">▶</button>
         <button onclick="deleteWallpaper(event, '${wp.id}')" title="Delete">✕</button>
       </div>

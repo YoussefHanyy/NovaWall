@@ -58,7 +58,6 @@ async function createMainWindow() {
   });
 
   await mainWindow.webContents.session.clearCache();
-  await mainWindow.loadFile(path.join(__dirname, '..', '..', 'index.html'));
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -100,7 +99,8 @@ app.whenReady().then(async () => {
   perfMonitor = new PerformanceMonitor(wallpaperWindow, db);
   perfMonitor.start();
 
-  // Setup all IPC handlers
+  // Setup all IPC handlers before loading renderer content
+  console.log('Setting up IPC handlers...');
   setupIpcHandlers({
     mainWindow,
     wallpaperWindow,
@@ -112,6 +112,10 @@ app.whenReady().then(async () => {
     wallpaperDir: WALLPAPER_DIR,
     thumbDir: THUMB_DIR,
   });
+  console.log('IPC handlers setup complete');
+
+  // Load UI after IPC handlers are ready
+  await mainWindow.loadFile(path.join(__dirname, '..', '..', 'index.html'));
 
   // Apply saved wallpaper on startup
   const lastWallpaper = db.getSetting('last_wallpaper_id');
