@@ -18,7 +18,6 @@ class WallpaperWindow {
     this.volume = 0;
     this.isEmbedded = false;
     this._keepBottomInterval = null;
-    this._contentReady = false;
     this._pendingWallpaper = null;
   }
 
@@ -64,7 +63,6 @@ class WallpaperWindow {
         volume: this.volume,
         fitMode: this.fitMode,
       });
-      this._contentReady = true;
       if (this._pendingWallpaper) {
         this._doLoadWallpaper(this._pendingWallpaper);
         this._pendingWallpaper = null;
@@ -128,11 +126,11 @@ class WallpaperWindow {
   loadWallpaper(wallpaper) {
     if (!this.window || this.window.isDestroyed()) return;
     this.currentWallpaper = wallpaper;
-    if (!this._contentReady) {
+    if (this.window.webContents.isLoading()) {
       this._pendingWallpaper = wallpaper;
-      return;
+    } else {
+      this._doLoadWallpaper(wallpaper);
     }
-    this._doLoadWallpaper(wallpaper);
   }
 
   _doLoadWallpaper(wallpaper) {
