@@ -18,7 +18,6 @@ class WallpaperWindow {
     this.volume = 0;
     this.isEmbedded = false;
     this._keepBottomInterval = null;
-    this._pendingWallpaper = null;
   }
 
   async create() {
@@ -56,19 +55,6 @@ class WallpaperWindow {
     windowOpts.focusable = false;
 
     this.window = new BrowserWindow(windowOpts);
-
-    // Register before loadFile so did-finish-load is never missed
-    this.window.webContents.on('did-finish-load', () => {
-      this.window.webContents.send('config', {
-        volume: this.volume,
-        fitMode: this.fitMode,
-      });
-      if (this._pendingWallpaper) {
-        this._doLoadWallpaper(this._pendingWallpaper);
-        this._pendingWallpaper = null;
-      }
-    });
-
     this.window.loadFile(path.join(__dirname, '..', '..', 'wallpaper.html'));
 
     // Try embedding
@@ -79,6 +65,15 @@ class WallpaperWindow {
     if (!this.isEmbedded) {
       this._setupFallbackMode();
     }
+
+    // Don't show until a wallpaper is actually loaded
+    // This prevents the black screen on startup
+    this.window.webContents.on('did-finish-load', () => {
+      this.window.webContents.send('config', {
+        volume: this.volume,
+        fitMode: this.fitMode,
+      });
+    });
   }
 
   async _embedBehindDesktop() {
@@ -90,15 +85,18 @@ class WallpaperWindow {
       const { embedWallpaperWindow } = require('./windows-api');
       const hwnd = this.window.getNativeWindowHandle();
       console.log('Attempting WorkerW embedding, HWND buffer length:', hwnd.length);
+      // Await so SetParent (moves window behind desktop) finishes BEFORE we show.
+      // Showing before embedding completes = fullscreen window flashes over icons
+      // then gets pushed behind = the "icons disappear" glitch.
       const success = await embedWallpaperWindow(hwnd);
       this.isEmbedded = success;
-      console.log('[WP] embed result:', success, '| isEmbedded:', this.isEmbedded);
       if (success) {
-        this.window.show();
-        console.log('[WP] ✓ embedded behind desktop — window shown');
+        console.log('✓ Wallpaper embedded behind desktop icons successfully');
       } else {
-        console.warn('[WP] ✗ embedding failed — falling back');
+        console.warn('✗ WorkerW embedding returned false');
       }
+      // Always show (matches original behavior), but now after embedding is done.
+      this.window.show();
     } catch (err) {
       console.warn('✗ Embedding failed:', err.message);
       this.isEmbedded = false;
@@ -125,28 +123,18 @@ class WallpaperWindow {
   }
 
   loadWallpaper(wallpaper) {
-    if (!this.window || this.window.isDestroyed()) { console.log('[WP] loadWallpaper: window missing/destroyed'); return; }
-    this.currentWallpaper = wallpaper;
-    const loading = this.window.webContents.isLoading();
-    console.log('[WP] loadWallpaper called, isLoading:', loading, 'isVisible:', this.window.isVisible(), 'isEmbedded:', this.isEmbedded);
-    if (loading) {
-      this._pendingWallpaper = wallpaper;
-    } else {
-      this._doLoadWallpaper(wallpaper);
-    }
-  }
-
-  _doLoadWallpaper(wallpaper) {
     if (!this.window || this.window.isDestroyed()) return;
 
+    this.currentWallpaper = wallpaper;
+
+    // Convert Windows path to file:// URL properly
     let wpPath = wallpaper.path;
     if (!wpPath.startsWith('http') && !wpPath.startsWith('file://')) {
       wpPath = 'file:///' + wpPath.replace(/\\/g, '/');
     }
 
     const defaultFit = this.db ? this.db.getSetting('default_fit_mode') || 'fill' : 'fill';
-
-    console.log('[WP] _doLoadWallpaper sending IPC, path:', wpPath, 'type:', wallpaper.type);
+    
     this.window.webContents.send('load-wallpaper', {
       path: wpPath,
       type: wallpaper.type,
@@ -154,9 +142,9 @@ class WallpaperWindow {
       volume: wallpaper.volume !== undefined ? wallpaper.volume : this.volume,
     });
 
+    // Now show the window since we have content
     if (!this.window.isVisible()) {
-      console.log('[WP] window not visible, calling showInactive');
-      this.window.showInactive();
+      this.window.showInactive(); // Show without stealing focus
     }
   }
 
