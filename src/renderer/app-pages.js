@@ -90,9 +90,13 @@ function renderPlaylistDetails() {
         <div class="playlist-items-table">
           ${items.length ? items.map((wp, index) => {
             const fileUrl = 'file:///' + wp.path.replace(/\\/g, '/');
+            const isVideo = wp.type === 'mp4' || wp.type === 'webm';
+            const thumb = isVideo
+              ? `<video src="${fileUrl}" muted loop preload="metadata"></video>`
+              : `<img src="${fileUrl}" alt="${wp.name}" loading="lazy">`;
             return `<div class="playlist-item-row">
               <div class="playlist-item-index">${index + 1}</div>
-              <div class="playlist-item-thumb"><img src="${fileUrl}" alt="${wp.name}" loading="lazy"></div>
+              <div class="playlist-item-thumb">${thumb}</div>
               <div class="playlist-item-meta">
                 <div class="playlist-item-name">${wp.name}</div>
                 <div class="playlist-item-sub">${wp.category} · ${formatSize(wp.file_size)}</div>

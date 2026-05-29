@@ -292,7 +292,7 @@ select.input { cursor:pointer; appearance:none; background-image:url("data:image
   border-radius: var(--radius-sm);
 }
 .playlist-item-index { width:28px; text-align:center; font-weight:700; color: var(--text-muted); }
-.playlist-item-thumb img { width:72px; height:48px; object-fit:cover; border-radius:8px; }
+.playlist-item-thumb img, .playlist-item-thumb video { width:72px; height:48px; object-fit:cover; border-radius:8px; background:#000; }
 .playlist-item-meta { flex:1; min-width:0; }
 .playlist-item-name { font-weight:600; }
 .playlist-item-sub { color: var(--text-muted); font-size:12px; margin-top:4px; }
