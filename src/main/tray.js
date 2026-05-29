@@ -43,6 +43,19 @@ class TrayManager {
         click: (item) => { this.wpWindow.setVolume(item.checked ? 0 : 0.5); }
       },
       { type: 'separator' },
+      { label: '🔧 Debug: Wallpaper DevTools', click: () => {
+        if (this.wpWindow?.window && !this.wpWindow.window.isDestroyed()) {
+          this.wpWindow.window.webContents.openDevTools({ mode: 'detach' });
+        }
+      }},
+      { label: '🔧 Debug: Show Wallpaper Window', click: () => {
+        if (this.wpWindow?.window && !this.wpWindow.window.isDestroyed()) {
+          this.wpWindow.window.setAlwaysOnTop(true, 'screen-saver');
+          this.wpWindow.window.show();
+          this.wpWindow.window.focus();
+        }
+      }},
+      { type: 'separator' },
       { label: 'Quit NovaWall', click: () => {
         const { ipcMain } = require('electron');
         ipcMain.emit('app-quit');

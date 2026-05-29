@@ -84,8 +84,10 @@
     }
 
     // ─── IPC Listeners ───
+    console.log('[NovaWall] wallpaper.html loaded, wpControl available:', !!window.wpControl);
     if (window.wpControl) {
       window.wpControl.onLoadWallpaper(loadWallpaper);
+      console.log('[NovaWall] load-wallpaper listener registered');
 
       window.wpControl.onPause(() => {
         if (currentElement && currentElement.tagName === 'VIDEO') currentElement.pause();

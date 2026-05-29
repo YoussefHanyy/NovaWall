@@ -92,11 +92,12 @@ class WallpaperWindow {
       console.log('Attempting WorkerW embedding, HWND buffer length:', hwnd.length);
       const success = await embedWallpaperWindow(hwnd);
       this.isEmbedded = success;
+      console.log('[WP] embed result:', success, '| isEmbedded:', this.isEmbedded);
       if (success) {
         this.window.show();
-        console.log('✓ Wallpaper embedded behind desktop icons successfully');
+        console.log('[WP] ✓ embedded behind desktop — window shown');
       } else {
-        console.warn('✗ WorkerW embedding returned false');
+        console.warn('[WP] ✗ embedding failed — falling back');
       }
     } catch (err) {
       console.warn('✗ Embedding failed:', err.message);
@@ -124,9 +125,11 @@ class WallpaperWindow {
   }
 
   loadWallpaper(wallpaper) {
-    if (!this.window || this.window.isDestroyed()) return;
+    if (!this.window || this.window.isDestroyed()) { console.log('[WP] loadWallpaper: window missing/destroyed'); return; }
     this.currentWallpaper = wallpaper;
-    if (this.window.webContents.isLoading()) {
+    const loading = this.window.webContents.isLoading();
+    console.log('[WP] loadWallpaper called, isLoading:', loading, 'isVisible:', this.window.isVisible(), 'isEmbedded:', this.isEmbedded);
+    if (loading) {
       this._pendingWallpaper = wallpaper;
     } else {
       this._doLoadWallpaper(wallpaper);
@@ -143,6 +146,7 @@ class WallpaperWindow {
 
     const defaultFit = this.db ? this.db.getSetting('default_fit_mode') || 'fill' : 'fill';
 
+    console.log('[WP] _doLoadWallpaper sending IPC, path:', wpPath, 'type:', wallpaper.type);
     this.window.webContents.send('load-wallpaper', {
       path: wpPath,
       type: wallpaper.type,
@@ -151,6 +155,7 @@ class WallpaperWindow {
     });
 
     if (!this.window.isVisible()) {
+      console.log('[WP] window not visible, calling showInactive');
       this.window.showInactive();
     }
   }
