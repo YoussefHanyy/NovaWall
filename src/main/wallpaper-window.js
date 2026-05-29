@@ -18,6 +18,8 @@ class WallpaperWindow {
     this.volume = 0;
     this.isEmbedded = false;
     this._keepBottomInterval = null;
+    this._contentReady = false;
+    this._pendingWallpaper = null;
   }
 
   async create() {
@@ -55,6 +57,20 @@ class WallpaperWindow {
     windowOpts.focusable = false;
 
     this.window = new BrowserWindow(windowOpts);
+
+    // Register before loadFile so did-finish-load is never missed
+    this.window.webContents.on('did-finish-load', () => {
+      this.window.webContents.send('config', {
+        volume: this.volume,
+        fitMode: this.fitMode,
+      });
+      this._contentReady = true;
+      if (this._pendingWallpaper) {
+        this._doLoadWallpaper(this._pendingWallpaper);
+        this._pendingWallpaper = null;
+      }
+    });
+
     this.window.loadFile(path.join(__dirname, '..', '..', 'wallpaper.html'));
 
     // Try embedding
@@ -65,15 +81,6 @@ class WallpaperWindow {
     if (!this.isEmbedded) {
       this._setupFallbackMode();
     }
-
-    // Don't show until a wallpaper is actually loaded
-    // This prevents the black screen on startup
-    this.window.webContents.on('did-finish-load', () => {
-      this.window.webContents.send('config', {
-        volume: this.volume,
-        fitMode: this.fitMode,
-      });
-    });
   }
 
   async _embedBehindDesktop() {
@@ -85,7 +92,7 @@ class WallpaperWindow {
       const { embedWallpaperWindow } = require('./windows-api');
       const hwnd = this.window.getNativeWindowHandle();
       console.log('Attempting WorkerW embedding, HWND buffer length:', hwnd.length);
-      const success = embedWallpaperWindow(hwnd);
+      const success = await embedWallpaperWindow(hwnd);
       this.isEmbedded = success;
       if (success) {
         this.window.show();
@@ -120,17 +127,24 @@ class WallpaperWindow {
 
   loadWallpaper(wallpaper) {
     if (!this.window || this.window.isDestroyed()) return;
-
     this.currentWallpaper = wallpaper;
+    if (!this._contentReady) {
+      this._pendingWallpaper = wallpaper;
+      return;
+    }
+    this._doLoadWallpaper(wallpaper);
+  }
 
-    // Convert Windows path to file:// URL properly
+  _doLoadWallpaper(wallpaper) {
+    if (!this.window || this.window.isDestroyed()) return;
+
     let wpPath = wallpaper.path;
     if (!wpPath.startsWith('http') && !wpPath.startsWith('file://')) {
       wpPath = 'file:///' + wpPath.replace(/\\/g, '/');
     }
 
     const defaultFit = this.db ? this.db.getSetting('default_fit_mode') || 'fill' : 'fill';
-    
+
     this.window.webContents.send('load-wallpaper', {
       path: wpPath,
       type: wallpaper.type,
@@ -138,9 +152,8 @@ class WallpaperWindow {
       volume: wallpaper.volume !== undefined ? wallpaper.volume : this.volume,
     });
 
-    // Now show the window since we have content
     if (!this.window.isVisible()) {
-      this.window.showInactive(); // Show without stealing focus
+      this.window.showInactive();
     }
   }
 

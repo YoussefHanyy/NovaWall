@@ -15,6 +15,8 @@ const { StartupManager } = require('./startup');
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) { app.quit(); }
 
+const isHiddenStart = process.argv.includes('--hidden');
+
 /* ───────── Globals ───────── */
 let mainWindow = null;
 let wallpaperWindow = null;
@@ -60,7 +62,7 @@ async function createMainWindow() {
   await mainWindow.webContents.session.clearCache();
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    if (!isHiddenStart) mainWindow.show();
   });
 
   mainWindow.on('close', (e) => {
