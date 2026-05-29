@@ -4,7 +4,6 @@
 
 // ─── Playlists Page ───
 function renderPlaylists() {
-  console.log('Rendering playlists page, state.playlists:', state.playlists);
   const pls = state.playlists;
   return `
     <div class="page-header">
@@ -89,11 +88,7 @@ function renderPlaylistDetails() {
         </div>
         <div class="playlist-items-table">
           ${items.length ? items.map((wp, index) => {
-            const fileUrl = 'file:///' + wp.path.replace(/\\/g, '/');
-            const isVideo = wp.type === 'mp4' || wp.type === 'webm';
-            const thumb = isVideo
-              ? `<video src="${fileUrl}" muted loop preload="metadata"></video>`
-              : `<img src="${fileUrl}" alt="${wp.name}" loading="lazy">`;
+            const thumb = mediaThumb(wp);
             return `<div class="playlist-item-row">
               <div class="playlist-item-index">${index + 1}</div>
               <div class="playlist-item-thumb">${thumb}</div>
@@ -183,9 +178,8 @@ function previewWallpaper(e, id) {
   const modal = document.getElementById('preview-modal');
   const player = document.getElementById('preview-player');
   const info = document.getElementById('preview-info');
-  const isVideo = wp.type === 'mp4' || wp.type === 'webm';
-  const src = `file:///${wp.path.replace(/\\/g, '/')}`;
-  player.innerHTML = isVideo ? `<video src="${src}" autoplay loop controls style="width:100%;max-height:60vh;object-fit:contain"></video>` : `<img src="${src}" style="width:100%;max-height:60vh;object-fit:contain">`;
+  const src = fileUrl(wp);
+  player.innerHTML = isVideo(wp) ? `<video src="${src}" autoplay loop controls style="width:100%;max-height:60vh;object-fit:contain"></video>` : `<img src="${src}" style="width:100%;max-height:60vh;object-fit:contain">`;
   info.innerHTML = `<h3 style="margin-bottom:8px">${wp.name}</h3><p style="color:var(--text-muted);font-size:13px">${wp.category} · ${wp.type.toUpperCase()} · ${formatSize(wp.file_size)}</p>
     <div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-primary" onclick="applyWallpaper('${wp.id}');closePreview()">Apply</button><button class="btn btn-secondary" onclick="closePreview()">Close</button></div>`;
   modal.classList.remove('hidden');
@@ -197,17 +191,14 @@ function createNewPlaylist() {
 }
 
 function openCreatePlaylistModal() {
-  console.log('Opening create playlist modal');
   const modal = document.getElementById('create-playlist-modal');
   const input = document.getElementById('create-playlist-name');
-  console.log('Modal element:', modal, 'Input element:', input);
   if (!modal || !input) {
     console.error('Modal or input elements not found!');
     return;
   }
   input.value = '';
   modal.classList.remove('hidden');
-  console.log('Modal should now be visible');
   setTimeout(() => input.focus(), 100);
 }
 
@@ -310,14 +301,12 @@ async function updatePlaylistInterval(id, val) {
   if (window.novawall) await window.novawall.updatePlaylist(id, { interval_ms: parseInt(val) });
   const p = state.playlists.find(x => x.id === id);
   if (p) p.interval_ms = parseInt(val);
-  renderPage();
 }
 
 async function updatePlaylistShuffle(id, val) {
   if (window.novawall) await window.novawall.updatePlaylist(id, { shuffle: val === "1" ? 1 : 0 });
   const p = state.playlists.find(x => x.id === id);
   if (p) p.shuffle = val === "1" ? 1 : 0;
-  renderPage();
 }
 
 async function selectPlaylist(id) {

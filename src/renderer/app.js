@@ -100,11 +100,7 @@ function renderFavorites() {
 // ─── Wallpaper Card ───
 function wallpaperCard(wp) {
   const isActive = state.settings.last_wallpaper_id === wp.id;
-  const ext = wp.type === 'mp4' || wp.type === 'webm' ? 'video' : 'image';
-  const fileUrl = 'file:///' + wp.path.replace(/\\/g, '/');
-  const mediaTag = ext === 'video'
-    ? `<video src="${fileUrl}" muted loop preload="metadata"></video>`
-    : `<img src="${fileUrl}" loading="lazy" alt="${wp.name}">`;
+  const mediaTag = mediaThumb(wp);
 
   return `
     <div class="wallpaper-card ${isActive ? 'card-active-ring' : ''}" ondblclick="applyWallpaper('${wp.id}')" onmouseenter="playCardVideo(this)" onmouseleave="pauseCardVideo(this)">
@@ -134,4 +130,13 @@ function formatSize(bytes) {
   if (!bytes) return '—';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
   return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+// ─── Media Helpers ───
+function isVideo(wp) { return wp.type === 'mp4' || wp.type === 'webm'; }
+function fileUrl(wp) { return 'file:///' + wp.path.replace(/\\/g, '/'); }
+function mediaThumb(wp) {
+  return isVideo(wp)
+    ? `<video src="${fileUrl(wp)}" muted loop preload="metadata"></video>`
+    : `<img src="${fileUrl(wp)}" loading="lazy" alt="${wp.name}">`;
 }
